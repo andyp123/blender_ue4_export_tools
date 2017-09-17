@@ -1,1 +1,1 @@
-blender_ue4_export_tools
+A script for Blender to assist with exporting objects and scenes to Unreal Engine 4.
