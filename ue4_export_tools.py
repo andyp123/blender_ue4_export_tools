@@ -166,7 +166,28 @@ def make_collider(scn, ob, ob_name, use_object_copy=False, number=0):
 
   return collider
 
+def scale_scene_objects(scn, scale_factor):
+  selected_objects = list(ob for ob in scn.objects if ob.select)
+  hidden_objects = list(ob for ob in scn.objects if ob.hide)
+  visible_layers = scn.layers[:] # copy visible layers
 
+  scn.layers = [True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True,True]
+
+  for ob in scn.objects:
+    ob.scale *= scale_factor
+    ob.location *= scale_factor
+    ob.select = True
+
+  # apply scale to selected objects
+  bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
+
+  scn.layers = visible_layers
+  select_objects(objects=selected_objects, deselect_others=True)
+  for ob in hidden_objects:
+    ob.hide = True
+
+def approx_equal(a, b, tol=0.0001):
+     return abs(a - b) < tol
 
 
 ##### EXPOSED OPERATORS #####
@@ -451,6 +472,13 @@ class AWP_UE4ExportTools_ExportScene(bpy.types.Operator):
   def execute(self, context):
     scn = context.scene
 
+    active_object = scn.objects.active
+    selected_objects = list(ob for ob in scn.objects if ob.select)
+    collider_layer_visible = scn.layers[collider_layer]
+
+    scn.layers[collider_layer] = True
+    bpy.ops.object.select_all(action='SELECT')
+
     # unit_system = scn.unit_settings.system
     # unit_scale = scn.unit_settings.scale_length
     # scale_factor = 100
@@ -478,10 +506,74 @@ class AWP_UE4ExportTools_ExportScene(bpy.types.Operator):
     #   scn.unit_settings.scale_length = 0.01
 
     # open fbx export dialogue
-    path = get_path(self.export_path, ob.name + '.fbx')
+    path = get_path(self.export_path, 'scene_export.fbx')
     bpy.ops.export_scene.fbx(filepath=path, check_existing=self.check_existing, use_selection=True)
 
     # restore scale
+
+    # restore selection and layer visibility
+    select_objects(objects=selected_objects, deselect_others=True)
+    scn.objects.active = active_object
+    scn.layers[collider_layer] = collider_layer_visible
+
+    return {'FINISHED'}
+
+
+class AWP_UE4ExportTools_SetUnrealSceneScale(bpy.types.Operator):
+  """Set the scene scale to values that work best with Unreal"""
+  bl_idname = 'awp_ue4.set_unreal_scale'
+  bl_label = 'UE4 Set Unreal Scene Scale'
+  bl_options = {'REGISTER', 'UNDO'}
+
+  scale_objects = bpy.props.BoolProperty(
+      name = "scale objects",
+      default = True,
+      subtype = 'NONE',
+      description = "Scale objects in the scene."
+      )
+
+  def execute(self, context):
+    scn = context.scene
+
+    ignore_scale = (scn.unit_settings.system == 'METRIC' and approx_equal(scn.unit_settings.scale_length, 0.01))
+    print("system: {0}, scale: {1}, ignore_scale: {2}".format(scn.unit_settings.system, scn.unit_settings.scale_length, str(ignore_scale)))
+
+    if not ignore_scale:
+      scn.unit_settings.system = 'METRIC'
+      scn.unit_settings.scale_length = 0.01
+
+      if self.scale_objects:
+        scale_scene_objects(scn, 100.0)
+
+    return {'FINISHED'}
+
+
+class AWP_UE4ExportTools_SetBlenderSceneScale(bpy.types.Operator):
+  """Set the scene scale to default Blender values"""
+  bl_idname = 'awp_ue4.set_blender_scale'
+  bl_label = 'UE4 Set Blender Scene Scale'
+  bl_options = {'REGISTER', 'UNDO'}
+
+  scale_objects = bpy.props.BoolProperty(
+      name = "scale objects",
+      default = True,
+      subtype = 'NONE',
+      description = "Scale objects in the scene."
+      )
+
+  def execute(self, context):
+    scn = context.scene
+
+    ignore_scale = (scn.unit_settings.system == 'NONE' and approx_equal(scn.unit_settings.scale_length, 1.0))
+
+    if not ignore_scale:
+      scn.unit_settings.system = 'NONE'
+      scn.unit_settings.scale_length = 1.0
+
+      if self.scale_objects:
+        scale_scene_objects(scn, 0.01)
+
+    return {'FINISHED'}
 
 
 # Required by the path selector in the UI
@@ -519,6 +611,13 @@ class AWP_UE4ExportToolsPanel(bpy.types.Panel):
 
     col = layout.column(align=True)
     row = col.row(align=True)
+    row.label("Scale:")
+    row = col.row(align=True)
+    row.operator('awp_ue4.set_unreal_scale',"UE4")
+    row.operator('awp_ue4.set_blender_scale',"Blender")
+
+    col = layout.column(align=True)
+    row = col.row(align=True)
     row.label("Colliders:")
     row = col.row(align=True)
     row.operator('awp_ue4.generate_colliders',"Generate Colliders")
@@ -552,6 +651,8 @@ def register():
   bpy.utils.register_class(AWP_UE4ExportTools_ExportObjects)
   bpy.utils.register_class(AWP_UE4ExportTools_ExportScene)
   bpy.utils.register_class(AWP_UE4ExportTools_ConvertSelectedToActiveColliders)
+  bpy.utils.register_class(AWP_UE4ExportTools_SetUnrealSceneScale)
+  bpy.utils.register_class(AWP_UE4ExportTools_SetBlenderSceneScale)
 
   bpy.utils.register_class(AWP_ExportSettings)
   bpy.types.Scene.export_settings = PointerProperty(type=AWP_ExportSettings)
@@ -564,6 +665,8 @@ def unregister():
   bpy.utils.unregister_class(AWP_UE4ExportTools_ExportObjects)
   bpy.utils.unregister_class(AWP_UE4ExportTools_ExportScene)
   bpy.utils.unregister_class(AWP_UE4ExportTools_ConvertSelectedToActiveColliders)
+  bpy.utils.unregister_class(AWP_UE4ExportTools_SetUnrealSceneScale)
+  bpy.utils.unregister_class(AWP_UE4ExportTools_SetBlenderSceneScale)
 
   bpy.utils.unregister_class(AWP_ExportSettings)
   del bpy.types.Scene.export_settings
