@@ -26,6 +26,12 @@ This is a simple tool that will rename the data of any object to have the same n
 #### Options
 + __Only Selected__ (off) - Restrict the function to only selected objects instead of operating on the entire scene.
 
+### UE4 / Blender Scale
+Quickly scale the entire scene from Blender's default scene units where 1 Blender unit = 1m to that of UE4, where 100 Blender units = 1m and vice versa.
+
+#### Options
++ __Scale Objects__ (on) - Scale the objects in the scene. If disabled, only the scene units will be changed.
+
 ### Generate Colliders
 Without colliders, there will be no collision on objects imported in Unreal, or Unreal will generate extremely poorly fitting colliders automatically, neither of which is desired. This function will create a copy of any selected object and then run Blender's build in convex hull function on it to create a collider that can be used in UE4. The collider will automatically be named correctly after the object using the 'UCX_' prefix system.
 
