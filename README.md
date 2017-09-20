@@ -25,7 +25,7 @@ For collider types that are not generated, UE4 Export Tools will still detect th
 To better organizing the scene, this add-on puts colliders it generates or organizes into a designated layer. Currently this layer is set to layer _11_. If need be, it can be changed by modifying the ue4_export_tools.py file before installation and changing the number on the line that reads `collider_layer = _10_` to whatever you would like (0-19). I plan to make this easier in the future by adding the option directly in the add-on.
 
 #### Output
-The output option allows selection of the default export folder to increase productivity by making it easieir to get to the desired output location in the file browser.
+The output option allows selection of the default export folder to increase productivity by making it easier to get to the desired output location in the file browser.
 
 ## Functions
 
