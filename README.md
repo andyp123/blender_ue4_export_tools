@@ -21,10 +21,13 @@ UE4 handles several types of custom collider that can be included in the .fbx fi
 + __`NC_` No Collider__ - No collider will be generated for objects with this prefix.
 For collider types that are not generated, UE4 Export Tools will still detect them if they are manually created and named correctly.
 
-## Functions
-
 #### Collider Layer
 To better organizing the scene, this add-on puts colliders it generates or organizes into a designated layer. Currently this layer is set to layer _11_. If need be, it can be changed by modifying the ue4_export_tools.py file before installation and changing the number on the line that reads `collider_layer = _10_` to whatever you would like (0-19). I plan to make this easier in the future by adding the option directly in the add-on.
+
+#### Output
+The output option allows selection of the default export folder to increase productivity by making it easieir to get to the desired output location in the file browser.
+
+## Functions
 
 ### Fix Data Names
 This is a simple tool that will rename the data of any object to have the same name as the object itself. The reason for this is that when using the full scene importer in UE4, mesh data names are used instead of object names, which can be problematic.
@@ -65,5 +68,3 @@ The Export Objects option will export all the selected objects and corresponding
 ### Export Scene
 The Export Scene option is designed to be used with UE4's 'Import Into Level...', and will export everything in the scene to an .fbx file with the expection of objects hidden, or hidden from selection. Due to differences in the way that Unreal handles objects imported this way, the scene should be scaled by 100 and units should be set to Metric and scale to 0.01.
 
-### Output
-The output option allows selection of the default export folder to increase productivity by making it easieir to get to the desired output location in the file browser.
