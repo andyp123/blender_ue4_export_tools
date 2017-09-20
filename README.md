@@ -3,10 +3,11 @@ A script for Blender to assist with exporting objects and scenes to Unreal Engin
 
 ## Installation
 1. Download the script from GitHub by clicking [here](https://github.com/andyp123/blender_ue4_export_tools/archive/master.zip).
-2. In Blender, open the User Preferences (ctrl+alt+p) and switch to the Add-ons tab.
-3. Select 'Install Add-on from file...' and select the file you downloaded.
-4. Enable the add-on by searching for it (enter 'ue4' to quickly find it).
-5. Save the user settings if you would like the script to always be enabled.
+2. Open the downloaded .zip and extract the file 'ue4_export_tools.py' to a temporary place on your computer.
+3. In Blender, open the User Preferences (ctrl+alt+p) and switch to the Add-ons tab.
+4. Select 'Install Add-on from file...' and select the 'ue4_export_tools.py' file you extracted from the .zip.
+5. Enable the add-on by searching for it (enter 'ue4' to quickly find it).
+6. Save the user settings if you would like the script to always be enabled.
 
 ## Usage
 This script is designed to make it easier to work with multiple objects in a Blender file and batch export them to different files that can be imported into Unreal. There is also a function to export the entire scene to be used with the 'File > Import Into Level...' importer in UE4. In addition to the export functions, there are tools to make it easier to quickly create and work with colliders that can be used in UE4.
@@ -46,11 +47,18 @@ Not quite the same as the Generate Colliders function. Instead of creating colli
 + __Use Object Copy__ (off) - Instead of generating a collider with the convex hull tool, a copy of the original object will be used.
 + __Delete Converted__ (on) - Delete the original selected objects leaving only the active object and the created colliders.
 + __Copy Active Transform__ (on) - Copy the active object's transform to the selected objects so the active object and colliders are all in the same position.
+
 ### Select Colliders
 Selects the colliders belonging to the selected object(s).
 
 #### Options
 + __Only Colliders__ (off) - Deselect everything except colliders belonging to the original selected object(s).
+
+### Organise Colliders
+Moves any objects with valid collider names to the collider layer and sets their render type to wireframe.
+
+#### Options
++ __Only Selected__ (off) - Restrict the function to only selected objects instead of operating on the entire scene.
 
 ### Export Object(s)
 The Export Objects option will export all the selected objects and corresponding colliders (regardless of whether or not they are selected or hidden). Exported objects will automatically be centered to the origin and exported to individual .fbx files with the same name as the object, containing the object and its colliders.

@@ -16,34 +16,28 @@
 #  ***** GPL LICENSE BLOCK *****
 
 # TODO:
-# + export scene
+# + export scene (get this to actually work...)
 #  - export all selected objects as one scene
-# + export multiple files
-#  - get object and dependencies (colliders, lods)
-#  - check mesh names = object names and fix if not
-#  - move all to origin
-#  - export to file with same name as mesh
-# look at other addons and figure out how to improve code
-# look at how to find objects on any layer (maybe just make collider layer visible)
+#  - ask before overwrite option
 
-# when adding colliders, more rigorously check the generated name does not collide with that of an existing object
+# WISHLIST TODO:
+# + add support for lods
+# + move certain options out from functions to general addon options:
+#  - scale objects
+#  - simple copy for colliders
+#  - triangulate meshes
+#  - user selectable collider_layer
+# + improve the way the files are exported (don't keep asking for the export folder)
+# + export groups with different settings (see Andreas Esau's Godot exporter, which is awesome)
+# + when adding colliders, more rigorously check the generated name does not collide with that of an existing object
+# + look at other addons and figure out how to improve code
+# is it worth copying everything to a new layer for export if destructive options are used (triangulate etc.)?
 
-# useful functions
-# + single/multi object export
-# + full scene export
-# + select colliders for object(s)
-# + generate convex collider for object(s)
-# + fix object data names (selected, or all in scene)
-# + set selected as colliders of active (essentially just set names)
-
-# options
-# + calculate convex colliders (on) / vs simple copy
-# + triangulate mesh (off)
-# + set scene scale (off)
 
 import bpy, bmesh
 from bpy.props import *
 from mathutils import Vector
+
 
 bl_info = {
   "name": "UE4 Export Tools",
@@ -218,8 +212,37 @@ class AWP_UE4ExportTools_FixObjectDataNames(bpy.types.Operator):
     return {'FINISHED'}
 
 
+class AWP_UE4ExportTools_OrganizeColliders(bpy.types.Operator):
+  """Move existing colliders to the collider layer and set render mode to wire."""
+  bl_idname = 'awp_ue4.organize_colliders'
+  bl_label = 'UE4 Organize Colliders'
+  bl_options = {'REGISTER', 'UNDO'}
+
+  only_selected = bpy.props.BoolProperty(
+    name = "only selected",
+    default = False,
+    description = "Only operate on selected objects."
+    )
+
+  def execute(self, context):
+    scn = context.scene
+
+    colliders = None
+    if self.only_selected:
+      colliders = (ob for ob in scn.objects if ob.select and is_collider_name(ob.name))
+    else:
+      colliders = (ob for ob in scn.objects if is_collider_name(ob.name))
+
+    for ob in colliders:
+      ob.data.name = ob.name
+      ob.draw_type = 'WIRE'
+      move_to_layer(ob, collider_layer)
+
+    return {'FINISHED'}
+
+
 class AWP_UE4ExportTools_SelectColliders(bpy.types.Operator):
-  """Select the colliders of all the selected objects"""
+  """Select the colliders of all the selected objects."""
   bl_idname = 'awp_ue4.select_colliders'
   bl_label = 'UE4 Select Colliders'
   bl_options = {'REGISTER', 'UNDO'}
@@ -479,37 +502,9 @@ class AWP_UE4ExportTools_ExportScene(bpy.types.Operator):
     scn.layers[collider_layer] = True
     bpy.ops.object.select_all(action='SELECT')
 
-    # unit_system = scn.unit_settings.system
-    # unit_scale = scn.unit_settings.scale_length
-    # scale_factor = 100
-
-    # ignore_scale = (unit_system == 'METRIC' and unit_scale == 0.01)
-
-    # # this assumes the user is working at the default blender scale of 1BU = 1M
-    # if self.scale_scene == True and ignore_scale == False:
-    #   # show warning that the scene will be scaled?
-
-    #   bpy.ops.object.select_all(action='DESELECT')
-
-    #   # find and scale all mesh objects
-    #   mesh_objects = (ob for ob in scn.objects if ob.type == 'MESH')
-    #   for ob in mesh_objects:
-    #     ob.scale *= scale_factor
-    #     ob.location *= scale_factor
-    #     ob.select = True
-
-    #   # apply scale to selected objects
-    #   bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-
-    #   # set scene scale
-    #   scn.unit_settings.system = 'METRIC'
-    #   scn.unit_settings.scale_length = 0.01
-
     # open fbx export dialogue
     path = get_path(self.export_path, 'scene_export.fbx')
     bpy.ops.export_scene.fbx(filepath=path, check_existing=self.check_existing, use_selection=True)
-
-    # restore scale
 
     # restore selection and layer visibility
     select_objects(objects=selected_objects, deselect_others=True)
@@ -536,7 +531,6 @@ class AWP_UE4ExportTools_SetUnrealSceneScale(bpy.types.Operator):
     scn = context.scene
 
     ignore_scale = (scn.unit_settings.system == 'METRIC' and approx_equal(scn.unit_settings.scale_length, 0.01))
-    print("system: {0}, scale: {1}, ignore_scale: {2}".format(scn.unit_settings.system, scn.unit_settings.scale_length, str(ignore_scale)))
 
     if not ignore_scale:
       scn.unit_settings.system = 'METRIC'
@@ -625,6 +619,8 @@ class AWP_UE4ExportToolsPanel(bpy.types.Panel):
     row.operator('awp_ue4.convert_selected_to_active_colliders',"Convert to Colliders")
     row = col.row(align=True)
     row.operator('awp_ue4.select_colliders', "Select Colliders")
+    row = col.row(align=True)
+    row.operator('awp_ue4.organize_colliders', "Organize Colliders")
 
     col = layout.column(align=True)
     row = col.row(align=True)
@@ -648,6 +644,7 @@ def register():
   bpy.utils.register_class(AWP_UE4ExportTools_FixObjectDataNames)
   bpy.utils.register_class(AWP_UE4ExportTools_GenerateColliders)
   bpy.utils.register_class(AWP_UE4ExportTools_SelectColliders)
+  bpy.utils.register_class(AWP_UE4ExportTools_OrganizeColliders)
   bpy.utils.register_class(AWP_UE4ExportTools_ExportObjects)
   bpy.utils.register_class(AWP_UE4ExportTools_ExportScene)
   bpy.utils.register_class(AWP_UE4ExportTools_ConvertSelectedToActiveColliders)
@@ -662,6 +659,7 @@ def unregister():
   bpy.utils.unregister_class(AWP_UE4ExportTools_FixObjectDataNames)
   bpy.utils.unregister_class(AWP_UE4ExportTools_GenerateColliders)
   bpy.utils.unregister_class(AWP_UE4ExportTools_SelectColliders)
+  bpy.utils.unregister_class(AWP_UE4ExportTools_OrganizeColliders)
   bpy.utils.unregister_class(AWP_UE4ExportTools_ExportObjects)
   bpy.utils.unregister_class(AWP_UE4ExportTools_ExportScene)
   bpy.utils.unregister_class(AWP_UE4ExportTools_ConvertSelectedToActiveColliders)
