@@ -21,32 +21,30 @@ UE4 handles several types of custom collider that can be included in the .fbx fi
 + __`NC_` No Collider__ - No collider will be generated for objects with this prefix.
 For collider types that are not generated, UE4 Export Tools will still detect them if they are manually created and named correctly.
 
+## Functions
+
 #### Collider Layer
 To better organizing the scene, this add-on puts colliders it generates or organizes into a designated layer. Currently this layer is set to layer _11_. If need be, it can be changed by modifying the ue4_export_tools.py file before installation and changing the number on the line that reads `collider_layer = _10_` to whatever you would like (0-19). I plan to make this easier in the future by adding the option directly in the add-on.
 
 ### Fix Data Names
 This is a simple tool that will rename the data of any object to have the same name as the object itself. The reason for this is that when using the full scene importer in UE4, mesh data names are used instead of object names, which can be problematic.
 
-_Options_ :
 + __Only Selected__ (off) - Restrict the function to only selected objects instead of operating on the entire scene.
 
 ### UE4 / Blender Scale
 Quickly scale the entire scene from Blender's default scene units where 1 Blender unit = 1m to that of UE4, where 100 Blender units = 1m and vice versa.
 
-_Options_ :
 + __Scale Objects__ (on) - Scale the objects in the scene. If disabled, only the scene units will be changed.
 
 ### Generate Colliders
 Without colliders, there will be no collision on objects imported in Unreal, or Unreal will generate extremely poorly fitting colliders automatically, neither of which is desired. This function will create a copy of any selected object and then run Blender's built-in convex hull function on it to create a collider that can be used in UE4. The collider will automatically be named correctly after the object using the 'UCX_' prefix system.
 
-_Options_ :
 + __Use Object Copy__ (off) - Instead of generating a collider with the convex hull tool, a copy of the original object will be used. This is a little faster on large scenes where you need lots of colliders to be generated.
 + __Replace Existing__ (off) - If an object already has any colliders, they will be deleted and new colliders generated. Currently, this ignores objects with multiple colliders, which are usually made manually.
 
 ### Convert to Colliders
 Not quite the same as the Generate Colliders function. Instead of creating colliders for all the selected objects, Convert to Colliders turns all the selected objects into colliders of the active (usually last selected) object. Selected objects will all be renamed to match the active object.
 
-_Options_ :
 + __Use Object Copy__ (off) - Instead of generating a collider with the convex hull tool, a copy of the original object will be used.
 + __Delete Converted__ (on) - Delete the original selected objects leaving only the active object and the created colliders.
 + __Copy Active Transform__ (on) - Copy the active object's transform to the selected objects so the active object and colliders are all in the same position.
@@ -54,13 +52,11 @@ _Options_ :
 ### Select Colliders
 Selects the colliders belonging to the selected object(s).
 
-_Options_ :
 + __Only Colliders__ (off) - Deselect everything except colliders belonging to the original selected object(s).
 
 ### Organise Colliders
 Moves any objects with valid collider names to the collider layer and sets their render type to wireframe.
 
-_Options_ :
 + __Only Selected__ (off) - Restrict the function to only selected objects instead of operating on the entire scene.
 
 ### Export Object(s)
