@@ -19,23 +19,24 @@
 # + export scene (get this to actually work...)
 #  - export all selected objects as one scene
 #  - ask before overwrite option
-# when assigning (convert to) colliders, temporarily rename the selected objects to avoid naming problems
-# when naming colliders, check the intended name is not already in use
-# remove support for *generating* colliders without a postfix number to simplify code and reduce possible errors?
 
 
 # WISHLIST TODO:
-# + add support for lods
-# + move certain options out from functions to general addon options:
+# + set collider solid color
+# + add UI for collider_layer (0-19)
+# + add UI for collider_draw_type ('WIRE'/'SOLID')
+# + UI: move certain options out from functions to general addon options:
 #  - scale objects
 #  - simple copy for colliders
 #  - triangulate meshes
 #  - user selectable collider_layer
+# + remove support for *generating* colliders without a postfix number to simplify code and reduce possible errors?
+# + add support for LODs
 # + improve the way the files are exported (don't keep asking for the export folder)
 # + export groups with different settings (see Andreas Esau's Godot exporter, which is awesome)
 # + when adding colliders, more rigorously check the generated name does not collide with that of an existing object
 # + look at other addons and figure out how to improve code
-# is it worth copying everything to a new layer for export if destructive options are used (triangulate etc.)?
+# + is it worth copying everything to a new layer for export if destructive options are used (triangulate etc.)?
 
 
 import bpy, bmesh
@@ -60,6 +61,7 @@ bl_info = {
 collider_prefixes = ['UCX_', 'UBX_', 'USP_', 'UCP_']
 non_collider_prefix = 'NC_'
 collider_layer = 10
+collider_draw_type = 'WIRE'
 
 
 
@@ -143,7 +145,7 @@ def make_collider(scn, ob, collider_name, use_object_copy=False):
   collider.data.name = collider_name
   collider.data.materials.clear()
   collider.matrix_world = ob.matrix_world.copy()
-  collider.draw_type = 'WIRE'
+  collider.draw_type = collider_draw_type
 
   # link colliders to scene
   scn.objects.link(collider)
@@ -253,7 +255,7 @@ class AWP_UE4ExportTools_OrganizeColliders(bpy.types.Operator):
 
     for ob in colliders:
       ob.data.name = ob.name
-      ob.draw_type = 'WIRE'
+      ob.draw_type = collider_draw_type
       move_to_layer(ob, collider_layer)
 
     return {'FINISHED'}
