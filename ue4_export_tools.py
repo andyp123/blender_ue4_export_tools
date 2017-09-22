@@ -151,6 +151,7 @@ def make_collider(scn, ob, collider_name, use_object_copy=False):
 
   # generate convex hull using built-in function (requires edit mode with vertex selection)
   if not use_object_copy:
+    collider.select = True
     scn.objects.active = collider
     bpy.ops.object.mode_set(mode='EDIT')
     bm = bmesh.from_edit_mesh(collider.data)
@@ -160,6 +161,8 @@ def make_collider(scn, ob, collider_name, use_object_copy=False):
       v.select = True
     bpy.ops.mesh.convex_hull(delete_unused = True)
     bpy.ops.object.mode_set(mode='OBJECT')
+    bpy.ops.object.shade_flat()
+    collider.select = False
 
   return collider
 
