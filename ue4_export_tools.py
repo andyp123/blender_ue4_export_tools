@@ -91,11 +91,12 @@ def is_collider_name(name):
 
 # check to see if an object has a collider
 def has_collider(name):
+  objs = bpy.data.objects
   for prefix in collider_prefixes:
     collider_name = prefix + name
-    if bpy.data.objects.get(collider_name) is not None:
+    if objs.get(collider_name) is not None:
       return True
-    if bpy.data.objects.get(collider_name + '_01') is not None:
+    if objs.get(collider_name + '_01') is not None:
       return True
   return False
 
@@ -105,16 +106,17 @@ def is_non_collider(name):
 # get all valid colliders for the named object (based only on name)
 def get_colliders(name):
   colliders = []
+  objs = bpy.data.objects
   for prefix in collider_prefixes:
     collider_name = prefix + name
-    collider_obj = bpy.data.objects.get(collider_name)
+    collider_obj = objs.get(collider_name)
     if collider_obj is not None:
       colliders.append(collider_obj)
     else:
       num_colliders = 1
       while num_colliders < 100:
         collider_name = prefix + name + '_' + str(num_colliders).zfill(2)
-        collider_obj = bpy.data.objects.get(collider_name)
+        collider_obj = objs.get(collider_name)
         if collider_obj is not None:
           colliders.append(collider_obj)
           num_colliders += 1
@@ -190,7 +192,7 @@ def get_collider_name(base_name, num=0):
     objs = bpy.data.objects
     while True:
       valid_name = 'UCX_{0}_{1}'.format(base_name, str(num).zfill(2))
-      if objs[valid_name] is None:
+      if objs.get(valid_name) is None:
         return (valid_name, num)
       num += 1
   else:
@@ -312,6 +314,7 @@ class AWP_UE4ExportTools_GenerateColliders(bpy.types.Operator):
     colliders = []
     selected_objects = list(ob for ob in scn.objects if ob.type == 'MESH' and ob.select == True)
 
+    objs = bpy.data.objects
     for ob in selected_objects:
       # fix data name
       ob_name = ob.name
@@ -325,7 +328,6 @@ class AWP_UE4ExportTools_GenerateColliders(bpy.types.Operator):
         existing_colliders = get_colliders(ob_name)
         num_colliders = len(existing_colliders)
         if num_colliders == 1: # replace single colliders only  
-          objs = bpy.data.objects
           for col in existing_colliders:
             objs.remove(objs[col.name], True)
         elif num_colliders > 1:
