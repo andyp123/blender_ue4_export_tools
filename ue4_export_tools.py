@@ -19,6 +19,10 @@
 # + export scene (get this to actually work...)
 #  - export all selected objects as one scene
 #  - ask before overwrite option
+# when assigning (convert to) colliders, temporarily rename the selected objects to avoid naming problems
+# when naming colliders, check the intended name is not already in use
+# remove support for *generating* colliders without a postfix number to simplify code and reduce possible errors?
+
 
 # WISHLIST TODO:
 # + add support for lods
@@ -115,6 +119,8 @@ def get_colliders(name):
           colliders.append(collider_obj)
           num_colliders += 1
         else:
+          # whilst there *could* be a gap in the collider names, give up searching to avoid time wasting
+          # could implement a simple if misses > max_misses: break style conditional here to catch some gaps
           break
   return colliders
 
@@ -128,13 +134,8 @@ def get_path(base, filename):
   path = bpy.path.abspath(base + filename)
   return path
 
-def make_collider(scn, ob, ob_name, use_object_copy=False, number=0):
+def make_collider(scn, ob, collider_name, use_object_copy=False):
   collider = ob.copy()
-  collider_name = ""
-  if number > 0:
-    collider_name = "UCX_{0}_{1}".format(ob_name, str(number).zfill(2))
-  else:
-    collider_name = "UCX_" + ob_name
   collider.name = collider_name
   collider.data = ob.data.copy()
   collider.data.name = collider_name
@@ -151,7 +152,7 @@ def make_collider(scn, ob, ob_name, use_object_copy=False, number=0):
     scn.objects.active = collider
     bpy.ops.object.mode_set(mode='EDIT')
     bm = bmesh.from_edit_mesh(collider.data)
-    for f in bm.faces: # for some reason, only selecting verts doesn't works correctly
+    for f in bm.faces: # for some reason, only selecting verts doesn't work correctly
       f.select = True
     for v in bm.verts:
       v.select = True
@@ -182,6 +183,18 @@ def scale_scene_objects(scn, scale_factor):
 
 def approx_equal(a, b, tol=0.0001):
      return abs(a - b) < tol
+
+# returns an array containing 
+def get_collider_name(base_name, num=0):
+  if num > 0:
+    objs = bpy.data.objects
+    while True:
+      valid_name = 'UCX_{0}_{1}'.format(base_name, str(num).zfill(2))
+      if objs[valid_name] is None:
+        return (valid_name, num)
+      num += 1
+  else:
+    return ('UCX_' + base_name, 0)
 
 
 ##### EXPOSED OPERATORS #####
@@ -320,7 +333,8 @@ class AWP_UE4ExportTools_GenerateColliders(bpy.types.Operator):
 
       # generate colliders for objects that don't already have them
       if not has_collider(ob_name):
-        collider = make_collider(scn, ob, ob.name, self.use_object_copy)
+        collider_name = get_collider_name(ob.name)
+        collider = make_collider(scn, ob, collider_name[0], self.use_object_copy)
         colliders.append(collider)
 
     if len(colliders) > 0:
@@ -373,12 +387,20 @@ class AWP_UE4ExportTools_ConvertSelectedToActiveColliders(bpy.types.Operator):
     scn.layers[collider_layer] = True
     bpy.ops.object.select_all(action='DESELECT')
 
+    # give selected objects temporary names to avoid collisions
+    for i, ob in enumerate(selected_objects):
+      temp_name = 'ue4tempname_' + str(i)
+      ob.name = temp_name
+      ob.data.name = temp_name
+
     # convert all selected objects into colliders for the active object
     num = 0
     if len(selected_objects) > 1:
-      num += 1 # a value > 0 will cause make_collider to use a the multi-collider naming scheme
+      num += 1 # a value > 0 will cause make_collider to use the multi-collider naming scheme
     for ob in selected_objects:
-      collider = make_collider(scn, ob, active_object.name, self.use_object_copy, num)
+      collider_name = get_collider_name(active_object.name, num)
+      num = collider_name[1]
+      collider = make_collider(scn, ob, collider_name[0], self.use_object_copy)
       colliders.append(collider)
       num += 1
 
