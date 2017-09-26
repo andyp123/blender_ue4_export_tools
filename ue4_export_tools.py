@@ -39,7 +39,7 @@
 # + is it worth copying everything to a new layer for export if destructive options are used (triangulate etc.)?
 
 
-import bpy, bmesh
+import bpy, bmesh, os
 from bpy.props import *
 from mathutils import Vector
 
@@ -135,8 +135,10 @@ def select_objects(objects, deselect_others=False):
     ob.select = True
 
 def get_path(base, filename):
-  path = bpy.path.abspath(base + filename)
-  return path
+  return bpy.path.abspath(base + filename)
+
+def path_exists(path):
+  return os.path.exists(bpy.path.abspath(path))
 
 def make_collider(scn, ob, collider_name, use_object_copy=False):
   collider = ob.copy()
@@ -449,9 +451,13 @@ class AWP_UE4ExportTools_ExportObjects(bpy.types.Operator):
   def invoke(self, context, event):
     self.export_path = bpy.context.scene.export_settings.path
     self.check_existing = bpy.context.scene.export_settings.check_existing
-    context.window_manager.fileselect_add(self)
-    return {'RUNNING_MODAL'}
-
+    
+    if path_exists(self.export_path):
+      return self.execute(context)
+    else:
+      context.window_manager.fileselect_add(self)
+      return {'RUNNING_MODAL'}
+    
   def execute(self, context):
     scn = context.scene
 
